@@ -37,14 +37,6 @@ services:
       - "3001:3000"
     networks:
       - pg_network
-
-  modbus-server:
-    image: ivandecharbo/modbus-server:latest
-    container_name: modbus-server
-    ports:
-      - "5502:1502"
-    networks:
-      - pg_network
     
 networks:
   pg_network:
