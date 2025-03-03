@@ -41,8 +41,6 @@ services:
   modbus-server:
     image: ivandecharbo/modbus-server:latest
     container_name: modbus-server
-    env_file:
-      - .env
     ports:
       - "5502:1502"
     networks:
