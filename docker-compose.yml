@@ -37,14 +37,33 @@ services:
       - "3000:3000"
     networks:
       - pg_network
+    volumes:
+    - grafana_data:/var/lib/grafana  
+    - ./grafana/provisioning:/etc/grafana/provisioning  
+    - ./grafana/dashboards:/var/lib/grafana/dashboards
 
   modbus-server:
     image: ivandecharbo/modbus-server:latest
     container_name: modbus-server
-    env_file:
-      - .env
     ports:
       - "1502:1502"
+    networks:
+      - pg_network
+
+  modbus-client:
+    image: modbus-client:latest
+    container_name: modbus-client
+    depends_on:
+      - modbus-server
+      - postgres
+    networks:
+      - pg_network
+
+  sync-sql:
+    image: sync-sql:latest
+    container_name: sync-sql
+    depends_on:
+      - postgres
     networks:
       - pg_network
     
@@ -54,3 +73,5 @@ networks:
 
 volumes:
   postgres_data:
+  grafana_data:
+
