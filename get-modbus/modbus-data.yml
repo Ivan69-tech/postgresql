@@ -1,0 +1,10 @@
+registers:
+  - name: "register-1100"
+    type: "holding"
+    data_type: "INT16"
+    address: 1100
+
+  - name: "registre-100"
+    type: "input"
+    data_type: "INT16"
+    address: 100

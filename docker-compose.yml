@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    networks:
+      - pg_network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - pg_network
+    depends_on:
+      - postgres
+  
+  grafana:
+    image: grafana/grafana-oss:8.4.3
+    container_name: grafana
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+    networks:
+      - pg_network
+
+  modbus-server:
+    image: ivandecharbo/modbus-server:latest
+    container_name: modbus-server
+    env_file:
+      - .env
+    ports:
+      - "1502:1502"
+    networks:
+      - pg_network
+    
+networks:
+  pg_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
