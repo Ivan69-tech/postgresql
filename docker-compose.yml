@@ -34,7 +34,7 @@ services:
     depends_on:
       - postgres
     ports:
-      - "3000:3000"
+      - "3001:3000"
     networks:
       - pg_network
 
@@ -44,7 +44,7 @@ services:
     env_file:
       - .env
     ports:
-      - "1502:1502"
+      - "5502:1502"
     networks:
       - pg_network
     
