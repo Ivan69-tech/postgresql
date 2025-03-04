@@ -54,6 +54,14 @@ conn_remote = connect_postgres(DBNAME_REMOTE, USER_REMOTE, PASSWORD_REMOTE, HOST
 cur_local = conn_local.cursor()
 cur_remote = conn_remote.cursor()
 
+## créer la table remote si elle n'existe pas.        
+cur_remote.execute("""
+    CREATE TABLE IF NOT EXISTS modbus2 (
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        register_name TEXT NOT NULL,
+        register_value INTEGER NOT NULL
+    )
+""")
 
 while True:
     try:
@@ -66,7 +74,7 @@ while True:
         # Requête SQL pour récupérer les nouvelles données locales
         cur_local.execute("""
             SELECT timestamp, register_name, register_value 
-            FROM modbus 
+            FROM modbus2 
             WHERE timestamp > %s 
             ORDER BY timestamp ASC
         """, (last_successful_time,))
@@ -83,7 +91,7 @@ while True:
             buffer.seek(0)  # Revenir au début du buffer
             
             with conn_remote.cursor() as cur_remote:
-                cur_remote.copy_from(buffer, 'modbus', columns=('timestamp', 'register_name', 'register_value'), sep="\t")
+                cur_remote.copy_from(buffer, 'modbus2', columns=('timestamp', 'register_name', 'register_value'), sep="\t")
             
             conn_remote.commit()
             print(f"📤 {len(rows)} entrées envoyées à la base distante via COPY.")

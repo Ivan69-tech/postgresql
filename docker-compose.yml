@@ -13,7 +13,8 @@ services:
       - pg_network
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
+    command: postgres -c wal_level=logical -c max_replication_slots=4 -c max_wal_senders=4 -c listen_addresses='*'
+    
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
@@ -59,13 +60,6 @@ services:
     networks:
       - pg_network
 
-  sync-sql:
-    image: sync-sql:latest
-    container_name: sync-sql
-    depends_on:
-      - postgres
-    networks:
-      - pg_network
     
 networks:
   pg_network:

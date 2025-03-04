@@ -13,7 +13,6 @@ with open("modbus-data.yml", "r") as file:
     config = yaml.safe_load(file)
 
 def connect_postgres():
-    """Établit une connexion à PostgreSQL avec gestion des erreurs."""
     while True:
         try:
             conn = psycopg2.connect(
@@ -23,25 +22,24 @@ def connect_postgres():
                 host="postgres",
                 port="5432"
             )
-            print("✅ Connexion PostgreSQL établie.")
+            print("Connexion PostgreSQL établie.")
             return conn
         except OperationalError as e:
-            print(f"⚠️ Erreur PostgreSQL : {e}. Nouvelle tentative dans 5 secondes...")
+            print(f"Erreur PostgreSQL : {e}. Nouvelle tentative dans 5 secondes...")
             time.sleep(5)
 
 def connect_modbus():
-    """Établit une connexion Modbus avec gestion des erreurs."""
     while True:
         try:
             client = ModbusTcpClient("modbus-server", port=1502)
             if client.connect():
-                print("✅ Connexion Modbus établie.")
+                print("Connexion Modbus établie.")
                 return client
             else:
-                print("⚠️ Échec connexion Modbus. Nouvelle tentative dans 5 secondes...")
+                print("Échec connexion Modbus. Nouvelle tentative dans 5 secondes...")
                 time.sleep(5)
         except Exception as e:
-            print(f"⚠️ Erreur connexion Modbus : {e}. Nouvelle tentative dans 5 secondes...")
+            print(f"Erreur connexion Modbus : {e}. Nouvelle tentative dans 5 secondes...")
             time.sleep(5)
 
 # Initialisation des connexions
@@ -50,7 +48,6 @@ cur = conn.cursor()
 modbus_client = connect_modbus()
 
 def read_register(register):
-    """Lit un registre Modbus et retourne sa valeur."""
     address = register["address"]
     data_type = register["data_type"]
     reg_type = register["type"]
@@ -77,12 +74,11 @@ def read_register(register):
         return None
 
 def insert_into_postgres(register_name, value):
-    """Insère les données dans PostgreSQL et gère les erreurs."""
     global conn, cur
     try:
+        ## pour Postgre, il faut créer la table avant d'insérer des données
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS modbus (
-                id SERIAL PRIMARY KEY,
+            CREATE TABLE IF NOT EXISTS modbus2 (
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 register_name TEXT NOT NULL,
                 register_value INTEGER NOT NULL
@@ -90,16 +86,16 @@ def insert_into_postgres(register_name, value):
         """)
         
         cur.execute(
-            "INSERT INTO modbus (register_name, register_value) VALUES (%s, %s)",
+            "INSERT INTO modbus2 (register_name, register_value) VALUES (%s, %s)",
             (register_name, value)
         )
         conn.commit()
     except OperationalError:
-        print("⚠️ Perte connexion PostgreSQL, tentative de reconnexion...")
+        print("Perte connexion PostgreSQL, tentative de reconnexion...")
         conn = connect_postgres()
         cur = conn.cursor()  # Recréer le curseur
     except Exception as e:
-        print(f"⚠️ Erreur SQL : {e}")
+        print(f"Erreur SQL : {e}")
 
 while True:
     try:
@@ -109,7 +105,7 @@ while True:
                 insert_into_postgres(register["name"], value)
                 print(f"Enregistré: {register['name']} -> {value}")
 
-        time.sleep(2)  # Attente entre deux lectures
+        time.sleep(2) 
     
     except Exception as e:
         print(f"⚠️ Erreur principale : {e}, nouvelle tentative dans 5 secondes...")
