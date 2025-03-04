@@ -54,7 +54,7 @@ conn_remote = connect_postgres(DBNAME_REMOTE, USER_REMOTE, PASSWORD_REMOTE, HOST
 cur_local = conn_local.cursor()
 cur_remote = conn_remote.cursor()
 
-## créer la table remote si elle n'existe pas.        
+## créer la table remote si elle n'existe pas. Toujours à faire sur postgresql        
 cur_remote.execute("""
     CREATE TABLE IF NOT EXISTS modbus2 (
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -80,21 +80,22 @@ while True:
         """, (last_successful_time,))
         
         rows = cur_local.fetchall()
-        print(f"📥 {len(rows)} nouvelles entrées récupérées de la base locale.")
+        print(f" {len(rows)} nouvelles entrées récupérées de la base locale.")
 
+        # utiliser la méthode COPY pour gagner en efficacité lors de l'envoi des données (sinon trop long)
         if rows:
             buffer = io.StringIO()
             
             for row in rows:
-                buffer.write("\t".join(map(str, row)) + "\n")  # Convertir chaque ligne en texte tabulé
+                buffer.write("\t".join(map(str, row)) + "\n")  
             
-            buffer.seek(0)  # Revenir au début du buffer
+            buffer.seek(0)  
             
             with conn_remote.cursor() as cur_remote:
                 cur_remote.copy_from(buffer, 'modbus2', columns=('timestamp', 'register_name', 'register_value'), sep="\t")
             
             conn_remote.commit()
-            print(f"📤 {len(rows)} entrées envoyées à la base distante via COPY.")
+            print(f"{len(rows)} entrées envoyées à la base distante via COPY.")
 
             # Mettre à jour le fichier JSON avec le dernier timestamp
             last_timestamp = rows[-1][0]
@@ -103,17 +104,16 @@ while True:
                 json.dump(dataToWrite, f)
 
         else:
-            print("✅ Aucune nouvelle donnée à synchroniser.")
+            print("Aucune nouvelle donnée à synchroniser.")
 
     except psycopg2.OperationalError:
-        print("⚠️ Perte connexion PostgreSQL, tentative de reconnexion...")
+        print("Perte connexion PostgreSQL, tentative de reconnexion...")
         conn_local = connect_postgres(DBNAME_LOCAL, USER_LOCAL, PASSWORD_LOCAL, HOST_LOCAL, PORT_LOCAL)
         conn_remote = connect_postgres(DBNAME_REMOTE, USER_REMOTE, PASSWORD_REMOTE, HOST_REMOTE, PORT_REMOTE)
         cur_local = conn_local.cursor()
         cur_remote = conn_remote.cursor()
 
     except Exception as e:
-        print(f"⚠️ Erreur inconnue : {e}")
+        print(f"Erreur inconnue : {e}")
 
-    # Pause avant la prochaine tentative
     time.sleep(15)
